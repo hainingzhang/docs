@@ -14,7 +14,7 @@ Kubernetes是目前最流行的基础设施平台，大量的实践证明，Kube
   <img src="./images/architecture.png">
 </div>
 
-KubeFATE的[Kubernetes部署部分](https://github.com/FederatedAI/KubeFATE/releases/download/v1.3.0-a/kubefate-k8s-v1.3.0-a.tar.gz)分成两大模块：
+KubeFATE的[Kubernetes部署](https://github.com/FederatedAI/KubeFATE/releases/download/v1.3.0-a/kubefate-k8s-v1.3.0-a.tar.gz)分成两大模块：
 1. KubeFATE命令行工具：KubeFATE的命令行是一个可执行的二进制文件，用户可以用它快速初始化、部署、管理FATE集群。KubeFATE的命令行可以运行在Kubernetes外，与KubeFATE服务交互。中间使用https协议，可以进行SSL加密，并适配企业的防火墙规则。它的功能模块如下图所示：
 
 <div align="center">
@@ -34,14 +34,14 @@ KubeFATE的[Kubernetes部署部分](https://github.com/FederatedAI/KubeFATE/rele
 1. 一台Linux的服务器，我们测试好的OS版本是Ubuntu 18.04 LTS，由于需要跑多方计算，服务器的推荐配置为：8核，16G内存以上；
 2. 两个域名分别给KubeFATE服务和FATE-board使用。如果没有DNS解析条件，可以通过设置hosts方式，后面的介绍基于这种情况；
 3. Linux服务器需要预先安装好Docker环境，具体参考[Install Docker in Ubuntu](https://docs.docker.com/install/linux/docker-ce/ubuntu/)；
-4. 要保证安装机器可以正常访问dockerhub，以及Google存储；
+4. 要保证安装机器可以正常访问Docker Hub，以及Google存储；
 5. 预先创建一个目录，以便整个过程使用该目录作为工作目录，命令如下：
 
 ```
 cd ~ && mkdir demo && cd demo
 ```
 
-**<div align="center"><font color="red">注意：这里介绍的部署代码里用的IP是10.160.112.145。请修改为你准备的实验机器IP！！！</font></div>**
+**<div align="center"><font color="red">注意：下文介绍的MiniKube机器IP地址是10.160.112.145。请修改为你准备的实验机器IP地址！！！</font></div>**
 
 ### 安装需要的工具
 为了使用KubeFATE部署FATE，我们需要以下工具：
@@ -51,6 +51,8 @@ cd ~ && mkdir demo && cd demo
 	* Release: v1.3.1-a
 	* 服务版本：v1.0.2
 	* 命令行版本：v1.0.2
+
+说明一下下面这些命令在哪台机器上运行？cli或者minikube的机器？(LP)
 
 #### 安装kubectl
 ```
@@ -66,14 +68,14 @@ The connection to the server localhost:8080 was refused - did you specify the ri
 ```
 curl -LO https://github.com/kubernetes/minikube/releases/download/v1.7.3/minikube-linux-amd64 && mv minikube-linux-amd64 minikube && chmod +x minikube && sudo mv ./minikube /usr/bin
 ```
-还是验证下安装结果，
+验证安装结果:`
 ```
 layne@machine:~/demo$ minikube version
 minikube version: v1.7.3
 commit: 436667c819c324e35d7e839f8116b968a2d0a3ff
 ```
 #### 下载KubeFATE的发布包并安装KubeFATE的命令行
-我们从Github上 [KubeFATE Release](https://github.com/FederatedAI/KubeFATE/releases)找到Kuberetes部署的下载包，并下载，
+我们从Github上 [KubeFATE Release](https://github.com/FederatedAI/KubeFATE/releases)页面找到Kuberetes部署的下载包，并下载，
 ```
 curl -LO https://github.com/FederatedAI/KubeFATE/releases/download/v1.3.0-a/kubefate-k8s-v1.3.0-a.tar.gz && tar -xzf ./kubefate-k8s-v1.3.0-a.tar.gz
 ```
@@ -82,7 +84,7 @@ curl -LO https://github.com/FederatedAI/KubeFATE/releases/download/v1.3.0-a/kube
 layne@machine:~/demo$ ls
 cluster.yaml  config.yaml  kubefate  kubefate-k8s-v1.3.0-a.tar.gz  kubefate.yaml  rbac-config.yaml
 ```
-由于KubeFATE命令行是可执行二进制文件，可以直接移动到path使用，
+由于KubeFATE命令行是可执行二进制文件，可以直接移动到path目录方便使用，
 ```
 chmod +x ./kubefate && sudo mv ./kubefate /usr/bin
 ```
@@ -125,7 +127,7 @@ kubectl apply -f ./rbac-config.yaml
 ```
 kubectl apply -f ./kubefate.yaml
 ```
-稍等一会，大概10几秒后用下面命令看下KubeFATE服务是否部署好```kubectl get all,ingress -n kube-fate```。如果返回如下面差不多（特别是pod的```STATUS```显示的是```Running```状态），
+稍等一会，大概10几秒后用下面命令看下KubeFATE服务是否部署好```kubectl get all,ingress -n kube-fate```。如果返回类似下面的信息（特别是pod的```STATUS```显示的是```Running```状态），则KubeFATE的服务就已经部署好并正常运行：
 ```
 layne@machine:~/demo$ kubectl get all,ingress -n kube-fate
 NAME                            READY   STATUS    RESTARTS   AGE
@@ -147,9 +149,9 @@ replicaset.apps/mongo-56684d6c86      1         1         1       16s
 NAME                          HOSTS          ADDRESS          PORTS   AGE
 ingress.extensions/kubefate   kubefate.net   10.160.112.145   80      16s
 ```
-那KubeFATE的服务就已经部署好并正常运行。
+
 #### 添加kubefate.net到hosts文件
-这一步主要为了让我们可以使用kubefate.net来访问KubeFATE服务的REST API. 如果我们有域名解析服务，这一步可以跳过。
+因为我们要用 kubefate.net 域名来访问KubeFATE服务（该域名在ingress中定义，有需要可自行修改），需要在运行kubefate命令行所在的机器配置hosts文件（注意不一定是Kubernetes所在的机器）。如果网络环境有域名解析服务，可配置kubefate.net域名指向MiniKube机器的IP地址，这样就不用配置hosts文件。注意：下面地址10.160.112.145 要替换为你的MiniKube机器地址。
 ```
 sudo -- sh -c "echo \"10.160.112.145 kubefate.net\"  >> /etc/hosts"
 ```
@@ -172,7 +174,7 @@ layne@machine:~/demo$ kubefate version
 ```
 到此，所有准备工作完毕，下面我们可以开始安装FATE了。需要注意的是，上面的工作只需要做一次，后面如果添加、删除、更新FATE集群，上面的不需要重新执行。
 ### 使用KubeFATE安装FATE
-按照前面的计划，我们需要安装两联盟方，ID分别9999与10000。现实情况，这两方应该是完全独立、隔绝的组织，为了模拟现实情况，所以我们需要先为他们创建各自独立的命名空间(namespace)。
+按照前面的计划，我们需要安装两联盟方，ID分别9999与10000。现实情况，这两方应该是完全独立、隔绝的组织，为了模拟现实情况，所以我们需要先为他们在Kubernetes上创建各自独立的命名空间(namespace)。
 #### 创建命名空间
 我们创建命名空间fate-9999用来部署9999，fate-10000部署10000
 ```
@@ -180,7 +182,7 @@ kubectl create namespace fate-9999
 kubectl create namespace fate-10000
 ```
 #### 准备各自的集群配置文件
-KubeFATE安装包包含了集群配置的简要配置参考文件```cluster.yaml```，我们可以基于它来修改。如果前面的步骤正确，这个文件已经在工作目录里，
+KubeFATE安装包包含了集群配置的简要配置参考文件```cluster.yaml```，我们可以给每个参与方复制一份来修改配置。如果前面的步骤正确，这个文件已经在工作目录里。运行下面命令复制文件：
 ```
 cp ./cluster.yaml fate-9999.yaml && cp ./cluster.yaml fate-10000.yaml
 ```
@@ -265,17 +267,17 @@ create job success, job id=a3dd184f-084f-4d98-9841-29927bdbf627
 layne@machine:~/demo$ kubefate cluster install -f ./fate-10000.yaml
 create job success, job id=370ed79f-637e-482c-bc6a-7bf042b64e67
 ```
-这个步骤需要去dockerhub下载相关镜像，所以具体速度与服务器的网速有很大关系，如果网速快，或者镜像已经准备好在服务器上的话，大概2、3分钟可以部署完成。我们可以使用```kubefate job ls```命令观察部署情况，
+这个步骤需要去Docker Hub下载相关镜像，所以具体速度与服务器的网速有很大关系，如果网速快，或者镜像已经准备好在服务器上的话，大概2、3分钟可以部署完成。我们可以使用```kubefate job ls```命令观察部署情况，
 ```
 layne@machine:~/demo$ kubefate job ls
 UUID                                    CREATOR METHOD          STATUS  STARTTIME               CLUSTERID
 a3dd184f-084f-4d98-9841-29927bdbf627    admin   ClusterInstall  Success 2020-03-10 12:26:39     2a15d783-67cd-4723-8a5c-50eb6355b6b0
 370ed79f-637e-482c-bc6a-7bf042b64e67    admin   ClusterInstall  Success 2020-03-10 12:27:06     16270e8a-20b1-43c7-9c6c-385977d8dfc8
 ```
-如果发现STATUS如上面那样变成了Sucess，证明部署成功完成。
+如果发现STATUS如上面那样变成了Success，证明部署成功完成。
 ### 验证FATE的部署
 #### 执行FATE自带的toy_example进行测试
-[toy_example](https://github.com/FederatedAI/FATE/blob/master/examples/toy_example) 是FATE提供的快速测试集群连通性的用例。测试脚本设定10000为host端，9999是guest端。我们采用集群模式执行。这个例子的具体说明可以参见：[toy_example README](https://github.com/FederatedAI/FATE/blob/master/examples/toy_example/README.md)
+[toy_example](https://github.com/FederatedAI/FATE/blob/master/examples/toy_example) 是FATE提供的快速测试集群连通性的用例。测试脚本设定10000为host端，9999是guest端。我们采用集群模式执行。这个例子的具体说明可以参见：[toy_example的README](https://github.com/FederatedAI/FATE/blob/master/examples/toy_example/README.md)
 
 FATE规定由guest端发起训练，所以我们需要进入fate-10000的python容器,
 ```
@@ -328,7 +330,8 @@ job status is running
 KubeFATE会配置FATE-Board以格式```http://${party_id}.fateboard.${serviceurl}```服务。所以：
 * FATE-9999的FATE-Board的URL为：http://9999.fateboard.kubefate.net/
 * FATE-10000的FATE-Board的URL为：http://10000.fateboard.kubefate.net/
-如果我们没有相关的DNS服务，我破门需要在需要访问以上地址的机器，也就是打开浏览器的机器配上相关的hosts，使上面URL指向部署FATE的服务器。在本例子里，就是10.160.112.145，这个需要根据你实际的IP来配置。
+
+如果我们没有相关的DNS服务，我们需要在访问以上域名的机器，也就是浏览器所在的机器配上相关的hosts，使上面域名指向部署FATE的服务器。在本例子里，就是10.160.112.145，这个需要根据你实际的IP地址来配置。
 如果是MacOS或者Linux可以使用以下命令配置，
 ```
 sudo -- sh -c "echo \"10.160.112.145 9999.fateboard.kubefate.net\"  >> /etc/hosts"
