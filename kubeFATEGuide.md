@@ -30,6 +30,10 @@ KubeFATE的[Kubernetes部署](https://github.com/FederatedAI/KubeFATE/releases/d
   <img src="./images/goal.png">
 </div>
 
+本文共出现两台机器：
+1. 用来做Demo的机器，是一台Linux机器，参照[前置条件第一点](#前置条件);
+2. 使用浏览器访问FATE-Board的机器，要求可以访问用来执行Demo的机器。
+
 ### 前置条件
 1. 一台Linux的服务器，我们测试好的OS版本是Ubuntu 18.04 LTS，由于需要跑多方计算，服务器的推荐配置为：8核，16G内存以上；
 2. 两个域名分别给KubeFATE服务和FATE-board使用。如果没有DNS解析条件，可以通过设置hosts方式，后面的介绍基于这种情况；
@@ -51,8 +55,6 @@ cd ~ && mkdir demo && cd demo
 	* Release: v1.3.1-a
 	* 服务版本：v1.0.2
 	* 命令行版本：v1.0.2
-
-说明一下下面这些命令在哪台机器上运行？cli或者minikube的机器？(LP)
 
 #### 安装kubectl
 ```
